@@ -12,7 +12,7 @@
   --panel:rgba(255,255,255,.085);
   --panel-hi:rgba(255,255,255,.16);
   --soft:rgba(255,255,255,.82);
-  --softer:rgba(255,255,255,.64);
+  --softer:rgba(255,255,255,.82);
   --warn:#FFD98A;
   --sans:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
   color-scheme:dark;
@@ -27,7 +27,7 @@ body{
 img{max-width:100%;}
 body::before{
   content:""; position:fixed; inset:0; z-index:-1;
-  background:radial-gradient(125% 85% at 50% 38%, var(--glow) 0%, var(--mid) 46%, var(--deep) 100%);
+  background:var(--deep);
 }
 .wrap{max-width:640px; margin:0 auto; padding-block:36px 64px; display:flex; flex-direction:column; gap:24px;}
 
