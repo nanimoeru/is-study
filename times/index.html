@@ -1,0 +1,388 @@
+<title>Choose your times</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Same visual world as the recruitment page: blue radial field, white type,
+   hairline rules, white only for the things that matter. */
+:root{
+  --deep:#0064B4; --mid:#0074BC; --glow:#0097C4;
+  --ink-on-white:#0A3C6B;
+  --line:rgba(255,255,255,.26);
+  --panel:rgba(255,255,255,.085);
+  --panel-hi:rgba(255,255,255,.16);
+  --soft:rgba(255,255,255,.82);
+  --softer:rgba(255,255,255,.64);
+  --warn:#FFD98A;
+  --sans:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; min-height:100%; background-color:var(--deep);
+  color:#fff; font-family:var(--sans); font-size:17px; line-height:1.5;
+  padding-inline:16px;
+}
+img{max-width:100%;}
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1;
+  background:radial-gradient(125% 85% at 50% 38%, var(--glow) 0%, var(--mid) 46%, var(--deep) 100%);
+}
+.wrap{max-width:640px; margin:0 auto; padding-block:36px 64px; display:flex; flex-direction:column; gap:24px;}
+
+h1{font-weight:700; font-size:clamp(1.7rem,5.6vw,2.3rem); line-height:1.14; letter-spacing:-.02em; margin:0; text-wrap:balance;}
+.lede{font-size:1.05rem; color:var(--soft); margin:.6em 0 0;}
+
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 20px 22px;}
+.panel h2{font-weight:600; font-size:1rem; margin:0 0 14px; padding-bottom:11px; border-bottom:1px solid var(--line);}
+.hint{font-size:.86rem; color:var(--softer); margin:.5em 0 0;}
+
+label.field{display:block;}
+label.field > span{display:block; font-size:.85rem; color:var(--soft); margin-bottom:6px;}
+input[type=text], select{
+  width:100%; padding:12px 13px; font-size:1rem; font-family:inherit;
+  border:1px solid var(--line); border-radius:10px;
+  background:rgba(255,255,255,.12); color:#fff; -webkit-appearance:none; appearance:none;
+}
+select option{color:#111; background:#fff;}
+input::placeholder{color:rgba(255,255,255,.55);}
+
+.zone-now{margin-top:10px; font-size:.86rem; color:var(--softer);}
+.zone-now b{color:#fff; font-weight:600;}
+
+.slot{
+  display:flex; align-items:flex-start; gap:13px;
+  padding:12px 14px; border:1px solid var(--line); border-radius:11px;
+  background:rgba(255,255,255,.05); margin-bottom:9px; cursor:pointer;
+}
+.slot:hover{background:var(--panel-hi);}
+.slot.on{background:rgba(255,255,255,.17); border-color:rgba(255,255,255,.55);}
+.slot input{width:24px; height:24px; flex:0 0 24px; margin:1px 0 0; color-scheme:light; accent-color:var(--ink-on-white);}
+.slot .when{min-width:0;}
+.slot .big{font-weight:600; font-size:1rem;}
+.slot .ref{font-size:.8rem; color:var(--softer); margin-top:2px;}
+.slot .odd{font-size:.8rem; color:var(--warn); margin-top:3px;}
+
+.count{font-size:.86rem; color:var(--softer); margin-top:4px;}
+
+button.go{
+  font-family:inherit; font-weight:600; font-size:1.02rem;
+  border:none; background:#fff; color:var(--ink-on-white);
+  border-radius:11px; padding:15px 20px; cursor:pointer; width:100%;
+}
+button.go:disabled{background:rgba(255,255,255,.4); color:rgba(10,60,107,.55); cursor:not-allowed;}
+button.go:hover:not(:disabled){background:#E8F4FB;}
+button.ghost{
+  font-family:inherit; font-weight:600; font-size:.9rem; margin-top:10px;
+  border:1px solid var(--line); background:transparent; color:#fff;
+  border-radius:10px; padding:11px 16px; cursor:pointer; width:100%;
+}
+button:focus-visible, input:focus-visible, select:focus-visible, .slot:focus-within{outline:3px solid #fff; outline-offset:3px;}
+
+.msg{margin-top:14px; padding:13px 15px; border-radius:11px; font-size:.92rem; display:none;}
+.msg.ok{display:block; background:#fff; color:var(--ink-on-white);}
+.msg.err{display:block; background:rgba(255,80,80,.18); border:1px solid rgba(255,160,160,.6);}
+
+.summary{
+  display:none; background:#fff; color:var(--ink-on-white);
+  border-radius:12px; padding:18px 20px; margin-top:14px;
+  white-space:pre-wrap; font-size:.92rem; line-height:1.5;
+}
+.summary.show{display:block;}
+
+footer{border-top:1px solid var(--line); padding-top:16px; color:var(--softer); font-size:.85rem;}
+footer p{margin:0 0 4px;}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;}}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <h1>Which times could you join?</h1>
+    <p class="lede">Tick every slot you could manage. The more you tick, the easier it is for us to find a time that works for the whole group. You need one slot in each session.</p>
+  </header>
+
+  <section class="panel">
+    <h2>Your time zone</h2>
+    <label class="field">
+      <span>All times below are shown in this zone</span>
+      <select id="tz"></select>
+    </label>
+    <p class="zone-now">It is <b id="nowLocal">—</b> for you right now. If that looks wrong, choose another zone above.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Session 1 — late October</h2>
+    <div id="s1"></div>
+    <p class="count" id="c1">Nothing ticked yet.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Session 2 — November</h2>
+    <p class="hint" style="margin-top:-6px;">About two weeks after the first one.</p>
+    <div id="s2"></div>
+    <p class="count" id="c2">Nothing ticked yet.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Your name</h2>
+    <label class="field">
+      <span>So we know whose answer this is</span>
+      <input type="text" id="name" autocomplete="name" placeholder="Jane Smith">
+    </label>
+    <p class="hint">We only use this to match your answer to your email. It is deleted once the groups are arranged.</p>
+  </section>
+
+  <button class="go" id="send" type="button">Send my availability</button>
+  <div class="msg" id="msg"></div>
+  <div class="summary" id="summary"></div>
+  <button class="ghost" id="copy" type="button" style="display:none;">Copy this text</button>
+
+  <footer>
+    <p>Do you really understand what you think you understand? — EUMASLI MA thesis</p>
+    <p>Lea Houborg-Hyldstrup &amp; Luca Marra · eumaslithesis@gmail.com</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---- where answers are sent. Fill these in to post silently to a Google Form.
+         While ENDPOINT is null the page falls back to a copy-and-send summary. ---- */
+  var ENDPOINT = null;          // e.g. "https://docs.google.com/forms/d/e/FORM_ID/formResponse"
+  var FIELDS = {                // e.g. {name: "entry.123456", zone: "entry.234567", ...}
+    name: null, zone: null, session1: null, session2: null
+  };
+
+  /* ---- the slots, written as the organisers set them (Central European Time) ---- */
+  var SLOTS = {
+    s1: [
+      "2026-10-26T09:00+01:00/2026-10-26T11:00+01:00",
+      "2026-10-26T10:00+01:00/2026-10-26T12:00+01:00",
+      "2026-10-27T12:00+01:00/2026-10-27T14:00+01:00",
+      "2026-10-29T17:00+01:00/2026-10-29T19:00+01:00",
+      "2026-10-29T18:00+01:00/2026-10-29T20:00+01:00",
+      "2026-10-31T09:00+01:00/2026-10-31T11:00+01:00"
+    ],
+    s2: [
+      "2026-11-09T09:00+01:00/2026-11-09T11:00+01:00",
+      "2026-11-09T10:00+01:00/2026-11-09T12:00+01:00",
+      "2026-11-09T11:00+01:00/2026-11-09T13:00+01:00",
+      "2026-11-10T10:00+01:00/2026-11-10T12:00+01:00",
+      "2026-11-10T11:00+01:00/2026-11-10T13:00+01:00",
+      "2026-11-12T17:00+01:00/2026-11-12T19:00+01:00",
+      "2026-11-12T18:00+01:00/2026-11-12T20:00+01:00",
+      "2026-11-13T09:00+01:00/2026-11-13T11:00+01:00",
+      "2026-11-13T10:00+01:00/2026-11-13T12:00+01:00"
+    ]
+  };
+
+  var FALLBACK_ZONES = [
+    "Europe/London","Europe/Dublin","Europe/Lisbon","Europe/Madrid","Europe/Paris","Europe/Brussels",
+    "Europe/Amsterdam","Europe/Berlin","Europe/Zurich","Europe/Rome","Europe/Vienna","Europe/Prague",
+    "Europe/Warsaw","Europe/Stockholm","Europe/Oslo","Europe/Copenhagen","Europe/Helsinki","Europe/Tallinn",
+    "Europe/Riga","Europe/Vilnius","Europe/Athens","Europe/Bucharest","Europe/Sofia","Europe/Istanbul",
+    "Europe/Kyiv","Europe/Moscow","Atlantic/Reykjavik","America/New_York","America/Chicago","America/Denver",
+    "America/Los_Angeles","America/Sao_Paulo","America/Mexico_City","Africa/Lagos","Africa/Nairobi",
+    "Africa/Johannesburg","Africa/Cairo","Asia/Jerusalem","Asia/Dubai","Asia/Karachi","Asia/Kolkata",
+    "Asia/Dhaka","Asia/Bangkok","Asia/Shanghai","Asia/Hong_Kong","Asia/Tokyo","Asia/Seoul",
+    "Australia/Perth","Australia/Sydney","Pacific/Auckland","UTC"
+  ];
+
+  var tzSel = document.getElementById('tz');
+  var zone = guessZone();
+
+  function guessZone(){
+    try {
+      var z = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (z) return z;
+    } catch(e){}
+    return "Europe/Rome";
+  }
+
+  function zoneList(){
+    var list = null;
+    try {
+      if (typeof Intl.supportedValuesOf === "function") list = Intl.supportedValuesOf("timeZone");
+    } catch(e){}
+    if (!list || !list.length) list = FALLBACK_ZONES.slice();
+    if (list.indexOf(zone) === -1) list.unshift(zone);
+    return list;
+  }
+
+  (function fillZones(){
+    var frag = document.createDocumentFragment();
+    zoneList().forEach(function(z){
+      var o = document.createElement('option');
+      o.value = z;
+      o.textContent = z.replace(/_/g, ' ');
+      if (z === zone) o.selected = true;
+      frag.appendChild(o);
+    });
+    tzSel.appendChild(frag);
+  })();
+
+  function fmt(date, opts){
+    return new Intl.DateTimeFormat('en-GB', Object.assign({timeZone: zone}, opts)).format(date);
+  }
+
+  function hourIn(date){
+    var h = new Intl.DateTimeFormat('en-GB', {timeZone: zone, hour: '2-digit', hour12: false}).format(date);
+    return parseInt(h, 10);
+  }
+
+  function render(){
+    ['s1','s2'].forEach(function(key){
+      var box = document.getElementById(key);
+      var kept = {};
+      Array.prototype.forEach.call(box.querySelectorAll('input'), function(i){ kept[i.value] = i.checked; });
+      box.innerHTML = '';
+      SLOTS[key].forEach(function(range, idx){
+        var parts = range.split('/');
+        var a = new Date(parts[0]), b = new Date(parts[1]);
+        var id = key + '-' + idx;
+
+        var row = document.createElement('label');
+        row.className = 'slot';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = range; cb.id = id;
+        cb.checked = !!kept[range];
+        if (cb.checked) row.classList.add('on');
+
+        var when = document.createElement('div');
+        when.className = 'when';
+
+        var big = document.createElement('div');
+        big.className = 'big';
+        big.textContent = fmt(a, {weekday:'short', day:'numeric', month:'long'}) + ', ' +
+                          fmt(a, {hour:'2-digit', minute:'2-digit', hour12:false}) + '–' +
+                          fmt(b, {hour:'2-digit', minute:'2-digit', hour12:false});
+        when.appendChild(big);
+
+        var ref = document.createElement('div');
+        ref.className = 'ref';
+        ref.textContent = 'Your time (' + zone.replace(/_/g,' ') + ')';
+        when.appendChild(ref);
+
+        var h = hourIn(a);
+        if (h < 7 || h >= 22){
+          var odd = document.createElement('div');
+          odd.className = 'odd';
+          odd.textContent = 'This falls at night where you are — tick it only if it really suits you.';
+          when.appendChild(odd);
+        }
+
+        row.appendChild(cb); row.appendChild(when);
+        box.appendChild(row);
+
+        cb.addEventListener('change', function(){
+          row.classList.toggle('on', cb.checked);
+          counts();
+        });
+      });
+    });
+    counts();
+    document.getElementById('nowLocal').textContent =
+      fmt(new Date(), {weekday:'long', hour:'2-digit', minute:'2-digit', hour12:false});
+  }
+
+  function picked(key){
+    return Array.prototype.filter.call(
+      document.getElementById(key).querySelectorAll('input'), function(i){ return i.checked; }
+    ).map(function(i){ return i.value; });
+  }
+
+  function label(range){
+    var p = range.split('/');
+    var a = new Date(p[0]), b = new Date(p[1]);
+    return fmt(a, {weekday:'short', day:'numeric', month:'short'}) + ' ' +
+           fmt(a, {hour:'2-digit', minute:'2-digit', hour12:false}) + '–' +
+           fmt(b, {hour:'2-digit', minute:'2-digit', hour12:false});
+  }
+
+  function counts(){
+    var n1 = picked('s1').length, n2 = picked('s2').length;
+    document.getElementById('c1').textContent = n1 ? (n1 + ' ticked') : 'Nothing ticked yet.';
+    document.getElementById('c2').textContent = n2 ? (n2 + ' ticked') : 'Nothing ticked yet.';
+  }
+
+  tzSel.addEventListener('change', function(){ zone = tzSel.value; render(); });
+  render();
+
+  /* ---------- sending ---------- */
+  var msg = document.getElementById('msg');
+  var summaryEl = document.getElementById('summary');
+  var copyBtn = document.getElementById('copy');
+
+  function show(kind, text){
+    msg.className = 'msg ' + kind;
+    msg.textContent = text;
+  }
+
+  function buildSummary(name, s1, s2){
+    var L = [];
+    L.push('Availability — ' + name);
+    L.push('Time zone: ' + zone);
+    L.push('');
+    L.push('Session 1:');
+    s1.forEach(function(r){ L.push('  • ' + label(r)); });
+    L.push('');
+    L.push('Session 2:');
+    s2.forEach(function(r){ L.push('  • ' + label(r)); });
+    return L.join('\n');
+  }
+
+  document.getElementById('send').addEventListener('click', function(){
+    var name = document.getElementById('name').value.trim();
+    var s1 = picked('s1'), s2 = picked('s2');
+
+    if (!name){ show('err', 'Please write your name first.'); return; }
+    if (!s1.length){ show('err', 'Please tick at least one time for session 1.'); return; }
+    if (!s2.length){ show('err', 'Please tick at least one time for session 2.'); return; }
+
+    var text = buildSummary(name, s1, s2);
+
+    if (ENDPOINT && FIELDS.name){
+      var fd = new FormData();
+      fd.append(FIELDS.name, name);
+      if (FIELDS.zone) fd.append(FIELDS.zone, zone);
+      if (FIELDS.session1) fd.append(FIELDS.session1, s1.map(label).join(' | '));
+      if (FIELDS.session2) fd.append(FIELDS.session2, s2.map(label).join(' | '));
+      fetch(ENDPOINT, {method:'POST', mode:'no-cors', body: fd}).then(function(){
+        show('ok', 'Thank you, ' + name + '. We have your answer. We will write to you with the final times.');
+        document.getElementById('send').disabled = true;
+      }).catch(function(){
+        show('err', 'Something went wrong. Please copy the text below and send it to us.');
+        summaryEl.textContent = text; summaryEl.classList.add('show');
+        copyBtn.style.display = 'block';
+      });
+      return;
+    }
+
+    show('ok', 'Almost done — copy the text below and send it to us by email, WhatsApp or Instagram.');
+    summaryEl.textContent = text;
+    summaryEl.classList.add('show');
+    copyBtn.style.display = 'block';
+  });
+
+  copyBtn.addEventListener('click', function(){
+    var t = summaryEl.textContent;
+    function select(){
+      try{
+        var r = document.createRange(); r.selectNodeContents(summaryEl);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        copyBtn.textContent = 'Selected — copy it';
+      }catch(e){ copyBtn.textContent = 'Select the text above'; }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        copyBtn.textContent = 'Copied';
+        setTimeout(function(){ copyBtn.textContent = 'Copy this text'; }, 2200);
+      }).catch(select);
+    } else { select(); }
+  });
+})();
+</script>
